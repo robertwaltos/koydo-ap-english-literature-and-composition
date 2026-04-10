@@ -1,0 +1,5 @@
+Initial release of Koydo AP English Literature and Composition Prep.
+
+• Practice questions
+• Score tracking
+• AI tutor integration

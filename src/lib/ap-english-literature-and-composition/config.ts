@@ -1,0 +1,45 @@
+// AP English Literature and Composition Configuration
+// Generated from top_200_exam_universe_seed.csv
+
+export const EXAM_CONFIG = {
+  examId: "EXAM177",
+  slug: "ap-english-literature-and-composition",
+  name: "AP English Literature and Composition",
+  fullName: "AP Lit",
+  alias: "AP Lit",
+  family: "AP",
+  category: "School exams",
+  subcategory: "AP subject exam",
+  country: "United States",
+  region: "North America",
+  languages: ["English"],
+  estimatedAnnualTakers: "high",
+  testingWindow: "May",
+  schedulePattern: "Annual",
+  ageGroup: "15-19",
+  targetUser: "AP student",
+  delivery: "Paper/digital mix",
+  questionTypes: ["MCQ + essays"],
+  adaptivity: "Linear",
+  sections: "Single subject",
+  scoringMode: "1-5",
+  essayOrSpeaking: "Essay",
+  ipRisk: "High",
+  contentReuse: "english_literature",
+  uiEngine: "objective_plus_essay",
+  monetizationPotential: "Medium",
+  tier: "Tier 4",
+  launchWave: "Wave 6",
+  themeColor: "#D97706",
+  themeColorDark: "#B45309",
+  localizationComplexity: "Low",
+  offlineNeeded: false,
+  mobileFirst: true,
+  locale: "en",
+  isRTL: false,
+  freemiumGate: {
+    dailyQuestions: 10,
+  },
+} as const;
+
+export type ExamConfig = typeof EXAM_CONFIG;
