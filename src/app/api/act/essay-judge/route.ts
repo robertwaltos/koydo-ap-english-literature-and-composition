@@ -7,9 +7,9 @@ const client = new Anthropic();
 
 // Essay prompts for each domain — should be extended per exam config
 const SAMPLE_PROMPTS: Record<string, string> = {
-  "English":
+  English:
     "Write a persuasive essay arguing whether social media has been a net positive or negative for society. Use specific examples and reasoning to support your position.",
-  "Writing":
+  Writing:
     "Some people believe that technology has made modern life better. Others disagree. Write an essay that presents both perspectives and gives your own view.",
   default:
     "Write an argumentative essay on a topic of your choice. Your essay should have a clear thesis, supporting arguments, and a conclusion.",
@@ -17,20 +17,30 @@ const SAMPLE_PROMPTS: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Premium gate — essay judging is a premium feature
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { data: entitlement } = await supabase
-    .from("microapp_user_entitlements").select("status")
-    .eq("user_id", user.id).eq("app_id", `koydo_${EXAM_CONFIG.slug}`).maybeSingle();
+    .from("microapp_user_entitlements")
+    .select("status")
+    .eq("user_id", user.id)
+    .eq("app_id", `koydo_${EXAM_CONFIG.slug}`)
+    .maybeSingle();
+
   const isPremium = (entitlement as { status: string } | null)?.status === "active";
   if (!isPremium) {
     return NextResponse.json({ error: "premium_required" }, { status: 403 });
   }
 
-  const { essay, prompt, domain } = await req.json() as {
-    essay: string; prompt?: string; domain?: string;
+  const { essay, prompt, domain } = (await req.json()) as {
+    essay: string;
+    prompt?: string;
+    domain?: string;
   };
 
   if (!essay || essay.trim().length < 50) {
@@ -65,14 +75,15 @@ Be honest and constructive. Score fairly — most student essays fall between 2-
     messages: [
       {
         role: "user",
-        content: `PROMPT: ${essayPrompt}\n\nESSAY:\n${essay}`,
+        content: `PROMPT: ${essayPrompt}
+
+ESSAY:
+${essay}`,
       },
     ],
   });
 
   const raw = (message.content[0] as { text: string }).text;
-
-  // Extract JSON from response
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     return NextResponse.json({ error: "Failed to parse evaluation" }, { status: 500 });
@@ -86,16 +97,19 @@ Be honest and constructive. Score fairly — most student essays fall between 2-
     model_paragraph: string;
   };
 
-  // Store the evaluation
-  await supabase.from("essay_submissions").insert({
-    user_id: user.id,
-    exam_id: EXAM_CONFIG.slug,
-    domain: domain ?? "Writing",
-    prompt: essayPrompt,
-    essay_text: essay,
-    evaluation: evaluation,
-    composite_score: evaluation.composite,
-  }).catch(() => null); // Non-blocking — table may not exist in all envs
+  try {
+    await supabase.from("essay_submissions").insert({
+      user_id: user.id,
+      exam_id: EXAM_CONFIG.slug,
+      domain: domain ?? "Writing",
+      prompt: essayPrompt,
+      essay_text: essay,
+      evaluation,
+      composite_score: evaluation.composite,
+    });
+  } catch {
+    // Table is optional in some environments.
+  }
 
   return NextResponse.json({ evaluation, prompt: essayPrompt });
 }
